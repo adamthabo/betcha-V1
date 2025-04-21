@@ -1,84 +1,93 @@
-import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import React, { useState } from 'react'
+import { supabase } from '../lib/supabaseClient'
 
-export default function MakePage() {
-  const [form, setForm] = useState({
-    title: '',
-    opponent_email: '',
-    judge_email: '',
-  });
-  const [message, setMessage] = useState(null);
-
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+export default function Make() {
+  const [creatorId, setCreatorId] = useState('')
+  const [opponentId, setOpponentId] = useState('')
+  const [judgeId, setJudgeId] = useState('')
+  const [description, setDescription] = useState('')
+  const [status, setStatus] = useState(null)
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setMessage(null);
+    e.preventDefault()
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setMessage('You must be logged in to make a bet.');
-      return;
-    }
-
-    const { error } = await supabase.from('wagers').insert({
-      title: form.title,
-      creator_id: user.id,
-      opponent_email: form.opponent_email,
-      judge_email: form.judge_email,
-    });
+    const { data, error } = await supabase.from('wagers').insert([
+      {
+        creator_id: creatorId,
+        opponent_id: opponentId,
+        judge_id: judgeId,
+        description: description,
+        accepted: false,
+        created_at: new Date().toISOString(),
+      },
+    ])
 
     if (error) {
-      setMessage(`Error: ${error.message}`);
+      console.error('Error creating bet:', error)
+      setStatus({ type: 'error', message: error.message })
     } else {
-      setMessage('🎉 Bet created!');
-      setForm({ title: '', opponent_email: '', judge_email: '' });
+      console.log('Bet created:', data)
+      setStatus({ type: 'success', message: 'Bet created successfully!' })
+      setCreatorId('')
+      setOpponentId('')
+      setJudgeId('')
+      setDescription('')
     }
-  };
+  }
 
   return (
-    <div className="max-w-lg mx-auto mt-12 p-6 bg-white rounded shadow">
-      <h2 className="text-xl font-bold mb-4">Make a Bet</h2>
+    <div className="max-w-xl mx-auto bg-white p-6 shadow-md rounded-md">
+      <h2 className="text-2xl font-bold mb-4 text-center">🎲 Make a Bet</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
           type="text"
-          name="title"
-          placeholder="What's the bet?"
-          value={form.title}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border rounded"
+          placeholder="Creator ID"
+          value={creatorId}
+          onChange={(e) => setCreatorId(e.target.value)}
+          className="w-full p-2 border rounded"
           required
         />
         <input
-          type="email"
-          name="opponent_email"
-          placeholder="Opponent's Email"
-          value={form.opponent_email}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border rounded"
+          type="text"
+          placeholder="Opponent ID"
+          value={opponentId}
+          onChange={(e) => setOpponentId(e.target.value)}
+          className="w-full p-2 border rounded"
           required
         />
         <input
-          type="email"
-          name="judge_email"
-          placeholder="Judge's Email"
-          value={form.judge_email}
-          onChange={handleChange}
-          className="w-full px-3 py-2 border rounded"
+          type="text"
+          placeholder="Judge ID"
+          value={judgeId}
+          onChange={(e) => setJudgeId(e.target.value)}
+          className="w-full p-2 border rounded"
+          required
+        />
+        <textarea
+          placeholder="Bet Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full p-2 border rounded"
+          rows={3}
           required
         />
         <button
           type="submit"
-          className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white p-2 rounded font-semibold"
         >
-          Submit Bet
+          Create Bet
         </button>
       </form>
-      {message && <p className="mt-4 text-sm text-center">{message}</p>}
+
+      {status && (
+        <p
+          className={`mt-4 text-center font-medium ${
+            status.type === 'success' ? 'text-green-600' : 'text-red-500'
+          }`}
+        >
+          {status.message}
+        </p>
+      )}
     </div>
-  );
+  )
 }
