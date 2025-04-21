@@ -1,4 +1,3 @@
-//trigger deploy
 import React from 'react'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Make from './pages/Make'
